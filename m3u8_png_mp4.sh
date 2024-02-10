@@ -10,12 +10,10 @@ echo "1. 创建下载任务"
 echo "2. 退出并清理"
 read -p "请输入选项（1/2）：" option
 
-M3U8_URL=$1  # M3U8链接
-FINAL_VIDEO=$2  # 输出视频文件名
+
 DOWNLOAD_DIR="downloads"
 TS_DIR="ts"
-base_url=$(echo $M3U8_URL | sed -E 's|(https?://[^/]+).*|\1|')
-MAX_JOB_COUNT=25
+MAX_JOB_COUNT=35
 MAX_ATTEMPTS=5
 
 # 清理文件函数
@@ -28,6 +26,9 @@ cleanup_files() {
 
 # 主要下载逻辑
 download() {
+  M3U8_URL=$1  # M3U8链接
+  FINAL_VIDEO=$2  # 输出视频文件名
+  base_url=$(echo $M3U8_URL | sed -E 's|(https?://[^/]+).*|\1|')
   # 清理旧文件
   cleanup_files
 
@@ -55,10 +56,10 @@ download() {
     png_file="$DOWNLOAD_DIR/$filename"
     ts_file="$TS_DIR/${filename}.ts"
 
-    # while [ $(jobs | wc -l) -ge $MAX_JOB_COUNT ]; do
-    #   echo "已达到最大后台进程数，休眠0.1秒后重试"
-    #   sleep 0.1
-    # done
+    while [ $(jobs -p | wc -l) -ge $MAX_JOB_COUNT ]; do
+      echo "已达到最大后台进程数，休眠1秒后重试"
+      sleep 1
+    done
     
     (
       success=0
