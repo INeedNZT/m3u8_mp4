@@ -23,6 +23,7 @@ download() {
 
     # 使用ffmpeg创建后台下载任务，并记录PID和文件名
     nohup ffmpeg -http_seekable 0 -i "$m3u8_url" -c:v copy -c:a aac -strict experimental "$output_path" > /dev/null 2>&1 &
+    # nohup ffmpeg -http_seekable 0 -i "$m3u8_url" -c:v libx264 -c:a aac -strict experimental "$output_path" > /dev/null 2>&1 &
     echo "$! $output_file" >> "$pid_file"
     echo "后台下载任务创建成功，输出文件名为：$output_file ，保存在存储空间内"
 }
