@@ -42,7 +42,7 @@ download() {
     fi
 }
 
-# 主菜单
+# 初始化存储空间
 init_workspace
 
 # 设置信号处理
