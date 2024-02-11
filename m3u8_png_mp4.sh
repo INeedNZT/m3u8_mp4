@@ -22,6 +22,7 @@ cleanup_files() {
   rm -rf "$DOWNLOAD_DIR"
   rm -rf "$TS_DIR"
   rm -f failed_downloads.txt
+  rm -f log.txt
 }
 
 # 主要下载逻辑
@@ -45,7 +46,7 @@ download() {
   mkdir -p "$TS_DIR"
   png_urls=$(grep -o '^[^#].*' "$DOWNLOAD_DIR/playlist.m3u8")
 
-  echo "发现: $(echo "$png_urls" | wc -l) 个资源文件需要下载"
+  echo "发现: $(echo "$png_urls" | wc -l) 个资源文件需要下载" >> log.txt
 
   for url in $png_urls; do
     if [[ ! "$url" =~ ^http ]]; then
@@ -57,7 +58,7 @@ download() {
     ts_file="$TS_DIR/${filename}.ts"
 
     while [ $(jobs -p | wc -l) -ge $MAX_JOB_COUNT ]; do
-      echo "已达到最大后台进程数，休眠1秒后重试"
+      echo "已达到最大后台进程数，休眠1秒后重试" >> log.txt
       sleep 1
     done
     
@@ -66,11 +67,11 @@ download() {
       attempts=0
       while [ $attempts -lt $MAX_ATTEMPTS ]; do
         if curl -L "$url" -o "$png_file" && [ -s "$png_file" ]; then
-            echo "下载成功且文件非空，开始转换为TS格式"
-            dd if="$png_file" of="$ts_file" bs=4 skip=53
+            echo "下载成功且文件非空，开始转换为TS格式" >> log.txt
+            dd if="$png_file" of="$ts_file" bs=4 skip=53 > /dev/null 2>&1
             break
         else
-            echo "第 $attempts 次尝试下载失败或文件为空，3秒后重试"
+            echo "第 $attempts 次尝试下载失败或文件为空，3秒后重试" >> log.txt
             sleep 3
             attempts=$((attempts+1))
         fi
@@ -81,7 +82,18 @@ download() {
     )&
   done
 
+  # 等待所有后台任务完成
   wait
+  # 验证文件完整性
+  if [ $(echo "$png_urls" | wc -l) -ne $(ls -1 "$DOWNLOAD_DIR" | wc -l) ]; then
+    echo "downloads目录下文件丢失" >> log.txt
+    exit 1
+  fi
+  if [ $(echo "$png_urls" | wc -l) -ne $(ls -1 "$TS_DIR" | wc -l) ]; then
+    echo "ts目录下文件丢失" >> log.txt
+    exit 1
+  fi
+
 
   # 先把原始的m3u8文件复制一份到ts目录下
   cp "$DOWNLOAD_DIR/playlist.m3u8" "$TS_DIR/playlist.m3u8"
@@ -91,27 +103,28 @@ download() {
     awk -v old="$url" -v new="$filename" '{gsub(old, new); print}' "$TS_DIR/playlist.m3u8" > tmp.m3u8 && mv tmp.m3u8 "$TS_DIR/playlist.m3u8"
   done
 
-  echo "所有下载和转换操作已完成。"
+  echo "已下载和转换所有ts文件，正在合并文件..." >> log.txt
 
   ffmpeg -i $TS_DIR/playlist.m3u8 -c copy $FINAL_VIDEO > /dev/null 2>&1 &
 
-  echo "最终视频已创建: $FINAL_VIDEO"
+  echo "最终视频已创建: $FINAL_VIDEO" >> log.txt
 }
 
-# 根据用户选择执行相应操作
-case $option in
-  1)
-    read -p "请输入M3U8 URL：" m3u8_url
-    read -p "请输入输出视频文件名：" output_video
-    download "$m3u8_url" "$output_video"
-    ;;
-  2)
-    cleanup_files
-    echo "已清理临时文件，程序退出。"
-    exit 0
-    ;;
-  *)
-    echo "无效选项，程序退出。"
-    exit 1
-    ;;
-esac
+while true; do
+  # 根据用户选择执行相应操作
+  case $option in
+    1)
+      read -p "请输入M3U8 URL：" m3u8_url
+      read -p "请输入输出视频文件名：" output_video
+      download "$m3u8_url" "$output_video"
+      ;;
+    2)
+      cleanup_files
+      echo "已清理临时文件，程序退出。"
+      exit 0
+      ;;
+    *)
+      echo "无效选项，程序退出。"
+      ;;
+  esac
+done
