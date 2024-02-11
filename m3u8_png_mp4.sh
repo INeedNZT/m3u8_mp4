@@ -102,8 +102,6 @@ download() {
   else
     echo "创建视频失败." >> log.txt
   fi
-
-  echo "最终视频已创建: $FINAL_VIDEO" >> log.txt
 }
 
 
