@@ -5,7 +5,7 @@ init_workspace() {
     echo "请输入存储空间的路径（将在此目录下保存所有文件）:"
     read workspace
     mkdir -p "$workspace"
-    echo "存储空间设置为：$(pwd $workspace)/"
+    echo "存储空间设置为:$(pwd $workspace)/"
 }
 
 cleanup_files() {
@@ -19,7 +19,7 @@ exit_and_cleanup() {
     exit
 }
 
-# 函数：创建后台下载任务
+# 函数:创建后台下载任务
 download() {
     echo "请输入M3U8 URL:"
     read m3u8_url
@@ -29,7 +29,7 @@ download() {
 
     output_path="$workspace/$output_file.mp4"
 
-    echo "下载任务创建成功，输出文件名为：$output_file.mp4 ，保存在存储空间内"
+    echo "下载任务创建成功，输出文件名为:$output_file.mp4 ，保存在存储空间内"
     echo "开始下载，请稍后..."
     # 使用ffmpeg创建后台下载任务，将输出重定向到日志文件log.txt
     ffmpeg -http_seekable 0 -i "$m3u8_url" -c:v copy -c:a aac -strict experimental "$output_path" >> "$workspace/log.txt" 2>&1
@@ -49,7 +49,7 @@ init_workspace
 trap exit_and_cleanup SIGINT SIGTERM
 
 while true; do
-    echo "请选择操作："
+    echo "请选择操作:"
     echo "1) 创建下载任务"
     echo "2) 退出"
     read -p "输入选项（1/2）: " option
