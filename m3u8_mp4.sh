@@ -5,7 +5,7 @@ init_workspace() {
     echo "请输入存储空间的路径（将在此目录下保存所有文件）:"
     read workspace
     mkdir -p "$workspace"
-    echo "存储空间设置为:$(pwd $workspace)/"
+    echo "存储空间设置为: $workspace"
 }
 
 cleanup_files() {
@@ -39,7 +39,7 @@ download() {
         echo "视频下载成功！文件保存在 $output_path"
     else
         echo "视频合并失败" >> "$workspace/log.txt"
-        echo "视频下载失败，去 $(pwd "$workspace/log.txt") 查看详情"
+        echo "视频下载失败，去 "$workspace/log.txt" 查看详情"
     fi
 }
 

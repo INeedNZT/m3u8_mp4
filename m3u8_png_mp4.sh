@@ -21,7 +21,7 @@ init_tmp_workspace(){
     tmp_workspace="$workspace/$output_file"
     # 输出文件名的文件夹
     mkdir -p "$tmp_workspace"
-    echo "已创建临时下载任务目录: $(pwd "$tmp_workspace")" >> "$tmp_workspace/log.txt"
+    echo "已创建临时下载任务目录: $tmp_workspace" >> "$tmp_workspace/log.txt"
 }
 
 # 清理文件函数
@@ -113,11 +113,11 @@ download() {
   echo "已下载和转换所有ts文件，正在合并文件..." >> "$tmp_workspace/log.txt"
 
   if ffmpeg -i "$tmp_workspace/$TS_DIR/playlist.m3u8" -c copy "$workspace/$output_file.mp4" >> "$tmp_workspace/log.txt" 2>&1; then
-    echo "视频下载成功！文件保存在 $(pwd "$workspace/$output_file.mp4")"
+    echo "视频下载成功！文件保存在 "$workspace/$output_file.mp4""
     cleanup_files
   else
     echo "视频合并失败" >> "$tmp_workspace/log.txt"
-    echo "视频下载失败，去 $(pwd "$tmp_workspace/log.txt") 查看详情"
+    echo "视频下载失败，去 "$tmp_workspace/log.txt" 查看详情"
   fi
 }
 
