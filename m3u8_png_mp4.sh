@@ -94,7 +94,7 @@ download() {
         attempts=$((attempts+1))
       done
       if [ $attempts -eq $MAX_ATTEMPTS ]; then
-          echo "$url" >> failed_downloads.txt
+          echo "$url" >> "$workspace/failed_downloads.txt"
       fi
     )&
   done
