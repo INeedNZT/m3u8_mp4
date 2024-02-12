@@ -117,7 +117,7 @@ download() {
     cleanup_files
   else
     echo "视频合并失败" >> "$tmp_workspace/log.txt"
-    echo "视频下载失败"，去 $(pwd "$tmp_workspace/log.txt") 查看详情"
+    echo "视频下载失败，去 $(pwd "$tmp_workspace/log.txt") 查看详情"
   fi
 }
 
