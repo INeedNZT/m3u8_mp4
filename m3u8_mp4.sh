@@ -5,7 +5,7 @@ init_workspace() {
     echo "请输入存储空间的路径（将在此目录下保存所有文件）:"
     read workspace
     mkdir -p "$workspace"
-    echo "存储空间设置为：$workspace"
+    echo "存储空间设置为：$(pwd $workspace)/"
 }
 
 cleanup_files() {
@@ -24,7 +24,7 @@ download() {
     echo "请输入M3U8 URL:"
     read m3u8_url
 
-    echo "请输入输出文件名（不需要后缀）:"
+    echo "请输入输出文件名（不需要mp4后缀）:"
     read output_file
 
     output_path="$workspace/$output_file.mp4"
