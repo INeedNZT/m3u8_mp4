@@ -59,7 +59,7 @@ download() {
   mkdir -p "$tmp_workspace/$TS_DIR"
   png_urls=$(grep -E '^[^#].*[^[:space:]]' "$tmp_workspace/$DOWNLOAD_DIR/playlist.m3u8")
 
-  echo "发现: $(echo "$png_urls" | wc -l) 个资源文件需要下载" >> $tmp_workspace/log.txt
+  echo "发现: $(echo "$png_urls" | wc -l) 个资源文件需要下载" >> "$tmp_workspace/log.txt"
 
   for url in $png_urls; do
     if [[ ! "$url" =~ ^http ]]; then
@@ -112,11 +112,12 @@ download() {
 
   echo "已下载和转换所有ts文件，正在合并文件..." >> "$tmp_workspace/log.txt"
 
-  if ffmpeg -i "$tmp_workspace/$TS_DIR/playlist.m3u8" -c copy "$workspace/$output_file.mp4"; then
-    echo "最终视频 $output_file.mp4 创建成功" >> "$tmp_workspace/log.txt"
+  if ffmpeg -i "$tmp_workspace/$TS_DIR/playlist.m3u8" -c copy "$workspace/$output_file.mp4" >> "$tmp_workspace/log.txt" 2>&1; then
+    echo "视频下载成功！文件保存在 $(pwd "$tmp_workspace/$output_file.mp4")"
     cleanup_files
   else
-    echo "创建视频失败." >> "$tmp_workspace/log.txt"
+    echo "视频合并失败" >> "$tmp_workspace/log.txt"
+    echo "视频下载失败"，去 $(pwd "$tmp_workspace/log.txt") 查看详情"
   fi
 }
 
@@ -144,7 +145,7 @@ while true; do
       exit_and_cleanup
       ;;
     *)
-      echo "无效选项，程序退出。"
+      echo "无效选项，程序退出"
       ;;
   esac
 done

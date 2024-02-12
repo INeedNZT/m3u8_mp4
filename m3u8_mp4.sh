@@ -38,7 +38,8 @@ download() {
     if [ $? -eq 0 ]; then
         echo "视频下载成功！文件保存在 $output_path"
     else
-        echo "视频下载失败，去 $workspace/log.txt 查看详情"
+        echo "视频合并失败" >> "$workspace/log.txt"
+        echo "视频下载失败，去 $(pwd "$workspace/log.txt") 查看详情"
     fi
 }
 
