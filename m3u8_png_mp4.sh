@@ -144,7 +144,7 @@ while true; do
       exit_and_cleanup
       ;;
     *)
-      echo "无效选项，程序退出"
+      echo "无效选项，请重新输入"
       ;;
   esac
 done
