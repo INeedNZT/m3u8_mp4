@@ -19,7 +19,8 @@ init_workspace() {
 # 初始化下载文件目录
 init_tmp_workspace(){
     tmp_workspace="$workspace/$output_file"
-    # 输出文件名的文件夹
+    #清除tmp_workspace如果已经存在了
+    rm -rf "$tmp_workspace"
     mkdir -p "$tmp_workspace"
     echo "已创建临时下载任务目录: $tmp_workspace" >> "$tmp_workspace/log.txt"
 }
@@ -47,8 +48,6 @@ exit_and_cleanup() {
 # 主要下载逻辑
 download() {
   base_url=$(echo $m3u8_url | sed -E 's|(https?://[^/]+).*|\1|')
-  # 清理旧文件
-  cleanup_files
 
   # 下载M3U8文件
   mkdir -p "$tmp_workspace/$DOWNLOAD_DIR"
