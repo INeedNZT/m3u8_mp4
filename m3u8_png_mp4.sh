@@ -93,7 +93,7 @@ download() {
         attempts=$((attempts+1))
       done
       if [ $attempts -eq $MAX_ATTEMPTS ]; then
-          echo "$url" >> "$workspace/failed_downloads.txt"
+          echo "下载资源 $workspace/$output_file.mp4 失败，资源链接:$url" >> "$workspace/failed_downloads.txt"
       fi
     )&
   done
