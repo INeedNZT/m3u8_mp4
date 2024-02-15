@@ -109,6 +109,13 @@ download() {
     awk -v old="$url" -v new="$filename" '{gsub(old, new); print}' "$tmp_workspace/$TS_DIR/playlist.m3u8" > tmp.m3u8 && mv tmp.m3u8 "$tmp_workspace/$TS_DIR/playlist.m3u8"
   done
 
+  # 如果存在failed_downloads.txt文件，则说明有下载失败的资源
+  if [ -f "$workspace/failed_downloads.txt" ]; then
+    echo "$workspace/$output_file.mp4存在下载失败的资源，不进行视频合并" >> "$tmp_workspace/log.txt"
+    echo "视频下载失败，去 "$tmp_workspace/log.txt" 查看详情"
+    return
+  fi
+
   echo "已下载和转换所有ts文件，正在合并文件..." >> "$tmp_workspace/log.txt"
 
   if ffmpeg -i "$tmp_workspace/$TS_DIR/playlist.m3u8" -c copy "$workspace/$output_file.mp4" >> "$tmp_workspace/log.txt" 2>&1; then
