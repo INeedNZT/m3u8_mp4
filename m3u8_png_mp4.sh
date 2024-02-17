@@ -35,7 +35,9 @@ cleanup_files() {
 cleanup_subprocesses() {
   echo "正在清理所有子进程..."
   # 使用jobs -p获取所有子进程的PID，然后用kill命令结束它们
-  kill -9 $(jobs -p) > /dev/null 2>&1
+  kill $(jobs -p) > /dev/null 2>&1
+  # 中止已经运行的curl命令（根据临时存储空间的路径）
+  pkill -f "curl.$tmp_workspace/$DOWNLOAD_DIR*" > /dev/null 2>&1
 }
 
 exit_and_cleanup() {
