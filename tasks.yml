@@ -1,0 +1,13 @@
+tasks:
+  # 可以同时指定多个存储空间
+  - workspace:
+      # 这里指定存储空间的路径
+      path: /Users/xxx/Downloads
+      # key是输出文件名（不包括mp4后缀），value是m3u8地址
+      video1: https://xxx.com/video1.m3u8
+      video2: https://xxx.com/video2.m3u8
+  - workspace:
+      # 路径可以是相对路径
+      path: .
+      video1: https://xxx.com/video1.m3u8
+      video2: https://xxx.com/video2.m3u8
