@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# 对于那些网站是m3u8却返回png的，可以尝试使用这个脚本下载
-# 仅限于简单的的png->ts文件转换（去处png文件开头的212个字节），暂不支持加密文件的转换
+# 这是 m3u8_png_mp4.sh 的批量下载版，可以处理多个下载任务，使用YAML文件配置下载任务
+# 用法: m3u8_png_mp4_tasks.sh [-t task_file]
 
 DOWNLOAD_DIR="downloads"
 TS_DIR="ts"
@@ -168,6 +168,8 @@ init_tasks() {
     echo "$tasks" | while IFS= read -r line; do
         output_file=$(echo "$line" | cut -d ':' -f 1)
         m3u8_url=$(echo "$line" | cut -d ':' -f 2-)
+        # 去处首尾空格
+        m3u8_url=$(echo "$m3u8_url" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
         # 跳过path键
         if [ "$output_file" == "path" ]; then
             continue
