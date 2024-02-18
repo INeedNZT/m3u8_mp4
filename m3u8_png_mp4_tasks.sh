@@ -189,14 +189,14 @@ init_tasks() {
   declare -a map_names
   paths="$(yq '.tasks[].workspace.path' $task_file)"
   i=0
-  for path in $paths; do
+  while IFS= read -r path; do
     declare -a "task_map_$i"_keys
     declare -a "task_map_$i"_values
     # 存储路径
     workspace_map+=("$path")
     # 存储映射名
     map_names+=("task_map_$i")
-    tasks_str=$(yq '.tasks[].workspace | select(.path == "'$path'") | del(.path)' $task_file)
+    tasks_str=$(yq '.tasks["'$i'"].workspace | del(.path)' $task_file)
     keys=$(echo "$tasks_str" | cut -d':' -f1)
     values=$(echo "$tasks_str" | cut -d':' -f2-)
     # 用制表符来区分键值对
@@ -205,7 +205,7 @@ init_tasks() {
       eval "task_map_${i}_values+=(\"$value\")"
     done <<< "$(paste <(echo "$keys") <(echo "$values"))"
     i=$((i+1))
-  done
+  done <<< "$paths"
 
   # 开始处理任务
   for j in "${!workspace_map[@]}"; do
