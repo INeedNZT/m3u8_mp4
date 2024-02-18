@@ -52,7 +52,9 @@ cleanup_files() {
 cleanup_subprocesses() {
   echo "正在清理所有子进程..."
   # 使用jobs -p获取所有子进程的PID，然后用kill命令结束它们
-  kill $(jobs -p) 2>/dev/null
+  kill $(jobs -p) > /dev/null 2>&1
+  # 中止已经运行的curl命令（根据临时存储空间的路径）
+  pkill -f "curl.$tmp_workspace/$DOWNLOAD_DIR*" > /dev/null 2>&1
 }
 
 exit_and_cleanup() {
@@ -69,7 +71,7 @@ download() {
   # 下载M3U8文件
   mkdir -p "$tmp_workspace/$DOWNLOAD_DIR"
   m3u8_file="$tmp_workspace/$DOWNLOAD_DIR/playlist.m3u8"
-  curl "$m3u8_url" -o "$m3u8_file"
+  curl -sS "$m3u8_url" -o "$m3u8_file"
 
   # 下载和转换PNG文件
   mkdir -p "$tmp_workspace/$TS_DIR"
@@ -94,12 +96,14 @@ download() {
     (
       attempts=0
       while [ $attempts -lt $MAX_ATTEMPTS ]; do
-        if curl -L "$url" -o "$png_file" && [ -s "$png_file" ]; then
+        # 加上-S参数来显示错误信息
+        if curl -L "$url" -s -o "$png_file" && [ -s "$png_file" ]; then
             echo "下载 $url 成功" >> "$tmp_workspace/log.txt"
             echo "正在转换 $filename 到ts文件..." >> "$tmp_workspace/log.txt"
-            dd if="$png_file" of="$ts_file" bs=4 skip=53
+            dd if="$png_file" of="$ts_file" bs=4 skip=53 > /dev/null 2>&1
             # 验证是否是ts文件，有时候可能是被封了，返回的是html文件或是其他格式的文件
-            if ffprobe -v error -show_format -i "$ts_file" 2>&1 | grep -q "format_name=mpegts"; then
+            ffprobe -v error -show_format -i "$ts_file" 2>&1 | grep -q "format_name=mpegts"
+            if [ $? -eq 0 ]; then
               echo "转换文件 $filename 成功" >> "$tmp_workspace/log.txt"
               break
             fi
@@ -130,23 +134,21 @@ download() {
   if [ -f "$workspace/failed_downloads.txt" ]; then
     echo "$workspace/$output_file.mp4存在下载失败的资源，不进行视频合并" >> "$tmp_workspace/log.txt"
     echo "视频下载失败，去 "$tmp_workspace/log.txt" 查看详情"
-    return
+    return 1
   fi
 
   echo "已下载和转换所有ts文件，正在合并文件..." >> "$tmp_workspace/log.txt"
-
-  if ffmpeg -i "$tmp_workspace/$TS_DIR/playlist.m3u8" -c copy "$workspace/$output_file.mp4" >> "$tmp_workspace/log.txt" 2>&1; then
+  ffmpeg -i "$tmp_workspace/$TS_DIR/playlist.m3u8" -c copy "$workspace/$output_file.mp4" >> "$tmp_workspace/log.txt" 2>&1
+  if [ $? -eq 0 ]; then
     echo "视频下载成功！文件保存在 "$workspace/$output_file.mp4""
     cleanup_files
   else
     echo "视频合并失败" >> "$tmp_workspace/log.txt"
     echo "视频下载失败，去 "$tmp_workspace/log.txt" 查看详情"
+    return 1
   fi
+  return 0
 }
-
-
-# 设置信号处理
-trap exit_and_cleanup SIGINT SIGTERM
 
 # 默认的任务文件名
 task_file="tasks.yml"
@@ -158,30 +160,94 @@ init_tasks() {
     exit 1
   fi
   echo "找到任务文件: $task_file"
-  # 读取任务文件
-  workspaces=$(yq '.tasks[].workspace.path' $task_file)
+
+  # 读取任务文件列表（yml配置文件）
+  declare -a workspace_map
+  declare -a map_names
+  paths="$(yq '.tasks[].workspace.path' $task_file)"
   i=0
-  for workspace in $workspaces; do
-    echo "正在处理存储空间: $workspace"
-    # 移除注释，然后根据索引把当前存储空间中的下载任务的信息放入entry数组
-    tasks=$(yq '... comments="" | .tasks['"$i"'].workspace' $task_file)
-    echo "$tasks" | while IFS= read -r line; do
-        output_file=$(echo "$line" | cut -d ':' -f 1)
-        m3u8_url=$(echo "$line" | cut -d ':' -f 2-)
-        # 去处首尾空格
-        m3u8_url=$(echo "$m3u8_url" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-        # 跳过path键
-        if [ "$output_file" == "path" ]; then
-            continue
-        fi
-        # 开始下载任务
-        echo "正在处理下载任务: $output_file"
-        init_workspace
-        init_tmp_workspace
-        download
-    done
+  for path in $paths; do
+    declare -a "task_map_$i"_keys
+    declare -a "task_map_$i"_values
+    # 存储路径
+    workspace_map+=("$path")
+    # 存储映射名
+    map_names+=("task_map_$i")
+    tasks_str=$(yq '.tasks[].workspace | select(.path == "'$path'") | del(.path)' $task_file)
+    keys=$(echo "$tasks_str" | cut -d':' -f1)
+    values=$(echo "$tasks_str" | cut -d':' -f2-)
+    # 用制表符来区分键值对
+    while IFS=$'\t' read -r key value; do
+      eval "task_map_${i}_keys+=(\"$key\")"
+      eval "task_map_${i}_values+=(\"$value\")"
+    done <<< "$(paste <(echo "$keys") <(echo "$values"))"
     i=$((i+1))
   done
+
+  # 开始处理任务
+  for j in "${!workspace_map[@]}"; do
+    workspace="${workspace_map[$j]}"
+    echo "正在处理存储空间: $workspace"
+    init_workspace
+
+    map_name="${map_names[$j]}"
+    eval "keys=(\"\${${map_name}_keys[@]}\")"
+    eval "values=(\"\${${map_name}_values[@]}\")"
+    
+    for k in "${!keys[@]}"; do
+      output_file="${keys[$k]}"
+      m3u8_url="${values[$k]}"
+      # 去处首尾空格
+      m3u8_url=$(echo "$m3u8_url" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+      # 初始化临时工作空间
+      init_tmp_workspace
+      echo "临时工作空间设置为: $tmp_workspace"
+      # 设置信号处理
+      trap exit_and_cleanup SIGINT SIGTERM
+      # 开始下载任务
+      echo "正在处理下载任务: $output_file , 请稍后..."
+      download
+      if [ $? -eq 0 ]; then
+        echo "下载任务 $output_file 已完成"
+      else
+        echo "下载任务 $output_file 失败"
+      fi
+    done
+  done
+
+
+  # i=0
+  # for workspace in $workspaces; do
+  #   echo "正在处理存储空间: $workspace"
+  #   init_workspace
+  #   # 移除注释，然后根据索引把当前存储空间中的下载任务的信息放入entry数组
+  #   tasks=$(yq '... comments="" | .tasks['"$i"'].workspace' $task_file)
+  #   while IFS= read -r line; do
+  #       output_file=$(echo "$line" | cut -d ':' -f 1)
+  #       m3u8_url=$(echo "$line" | cut -d ':' -f 2-)
+  #       # 去处首尾空格
+  #       m3u8_url=$(echo "$m3u8_url" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+  #       # 跳过path键
+  #       if [ "$output_file" == "path" ]; then
+  #           echo "跳过path键"
+  #           continue
+  #       fi
+  #       # 初始化临时工作空间
+  #       init_tmp_workspace
+  #       echo "临时工作空间设置为: $tmp_workspace"
+  #       # 设置信号处理
+  #       trap exit_and_cleanup SIGINT SIGTERM
+  #       # 开始下载任务
+  #       echo "正在处理下载任务: $output_file , 请稍后..."
+  #       download
+  #       if [ $? -eq 0 ]; then
+  #         echo "下载任务 $output_file 已完成"
+  #       else
+  #         echo "下载任务 $output_file 失败"
+  #       fi
+  #   done <<< "$tasks"
+  #   i=$((i+1))
+  # done
 }
 
 # 解析命令行参数

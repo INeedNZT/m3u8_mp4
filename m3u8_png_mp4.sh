@@ -84,7 +84,8 @@ download() {
             echo "正在转换 $filename 到ts文件..." >> "$tmp_workspace/log.txt"
             dd if="$png_file" of="$ts_file" bs=4 skip=53
             # 验证是否是ts文件，有时候可能是被封了，返回的是html文件或是其他格式的文件
-            if ffprobe -v error -show_format -i "$ts_file" 2>&1 | grep -q "format_name=mpegts"; then
+            ffprobe -v error -show_format -i "$ts_file" 2>&1 | grep -q "format_name=mpegts"
+            if [ $? -eq 0 ]; then
               echo "转换文件 $filename 成功" >> "$tmp_workspace/log.txt"
               break
             fi
@@ -120,7 +121,8 @@ download() {
 
   echo "已下载和转换所有ts文件，正在合并文件..." >> "$tmp_workspace/log.txt"
 
-  if ffmpeg -i "$tmp_workspace/$TS_DIR/playlist.m3u8" -c copy "$workspace/$output_file.mp4" >> "$tmp_workspace/log.txt" 2>&1; then
+  ffmpeg -i "$tmp_workspace/$TS_DIR/playlist.m3u8" -c copy "$workspace/$output_file.mp4" >> "$tmp_workspace/log.txt" 2>&1
+  if [ $? -eq 0 ]; then
     echo "视频下载成功！文件保存在 "$workspace/$output_file.mp4""
     cleanup_files
   else
