@@ -187,7 +187,7 @@ init_tasks() {
   # 开始处理任务
   for j in "${!workspace_map[@]}"; do
     workspace="${workspace_map[$j]}"
-    echo "正在处理存储空间: $workspace"
+    echo "正在处理存储空间 $workspace 的下载任务..."
     init_workspace
 
     map_name="${map_names[$j]}"
@@ -214,40 +214,6 @@ init_tasks() {
       fi
     done
   done
-
-
-  # i=0
-  # for workspace in $workspaces; do
-  #   echo "正在处理存储空间: $workspace"
-  #   init_workspace
-  #   # 移除注释，然后根据索引把当前存储空间中的下载任务的信息放入entry数组
-  #   tasks=$(yq '... comments="" | .tasks['"$i"'].workspace' $task_file)
-  #   while IFS= read -r line; do
-  #       output_file=$(echo "$line" | cut -d ':' -f 1)
-  #       m3u8_url=$(echo "$line" | cut -d ':' -f 2-)
-  #       # 去处首尾空格
-  #       m3u8_url=$(echo "$m3u8_url" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-  #       # 跳过path键
-  #       if [ "$output_file" == "path" ]; then
-  #           echo "跳过path键"
-  #           continue
-  #       fi
-  #       # 初始化临时工作空间
-  #       init_tmp_workspace
-  #       echo "临时工作空间设置为: $tmp_workspace"
-  #       # 设置信号处理
-  #       trap exit_and_cleanup SIGINT SIGTERM
-  #       # 开始下载任务
-  #       echo "正在处理下载任务: $output_file , 请稍后..."
-  #       download
-  #       if [ $? -eq 0 ]; then
-  #         echo "下载任务 $output_file 已完成"
-  #       else
-  #         echo "下载任务 $output_file 失败"
-  #       fi
-  #   done <<< "$tasks"
-  #   i=$((i+1))
-  # done
 }
 
 # 解析命令行参数
