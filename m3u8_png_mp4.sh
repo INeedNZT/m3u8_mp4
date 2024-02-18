@@ -77,7 +77,7 @@ download() {
     done
     
     (
-      attempts=0
+      local attempts=0
       while [ $attempts -lt $MAX_ATTEMPTS ]; do
         if curl -L "$url" -o "$png_file" && [ -s "$png_file" ]; then
             echo "下载 $url 成功" >> "$tmp_workspace/log.txt"
@@ -123,7 +123,7 @@ download() {
 
   echo "已下载和转换所有ts文件，正在合并文件..." >> "$tmp_workspace/log.txt"
 
-  ffmpeg -i "$tmp_workspace/$TS_DIR/playlist.m3u8" -c copy "$workspace/$output_file.mp4" >> "$tmp_workspace/log.txt" 2>&1
+  ffmpeg -i "$tmp_workspace/$TS_DIR/playlist.m3u8" -c copy "$workspace/$output_file.mp4" -xerror >> "$tmp_workspace/log.txt" 2>&1
   if [ $? -eq 0 ]; then
     echo "视频下载成功！文件保存在 "$workspace/$output_file.mp4""
     cleanup_files
