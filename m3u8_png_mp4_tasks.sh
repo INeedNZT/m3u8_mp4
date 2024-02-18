@@ -64,6 +64,19 @@ exit_and_cleanup() {
     exit
 }
 
+# 检查文件是否是ts文件或是否存在
+check_files() {
+  ts_paths=$(grep -E '^[^#].*[^[:space:]]' "$tmp_workspace/$TS_DIR/playlist.m3u8")
+  for path in $ts_paths; do
+    ffmpeg -i "$ts_paths" -f null -
+    if [ $? -ne 0 ]; then
+      echo "文件 $path 不是ts文件或者文件不存在" >> "$tmp_workspace/log.txt"
+      return 1
+    fi
+  done
+  return 0
+}
+
 # 主要下载逻辑
 download() {
   base_url=$(echo $m3u8_url | sed -E 's|(https?://[^/]+).*|\1|')
@@ -139,8 +152,16 @@ download() {
     fi
   fi
 
+  # 除了failed_downloads.txt文件，再次检查每个文件，看ts文件存不存在或者是不是ts文件
+  if [ $(check_files) -ne 0 ]; then
+    echo "$workspace/$output_file.mp4存在下载失败的资源，不进行视频合并" >> "$tmp_workspace/log.txt"
+    echo "视频下载失败，去 "$tmp_workspace/log.txt" 查看详情"
+    return 1
+  fi
+
   echo "已下载和转换所有ts文件，正在合并文件..." >> "$tmp_workspace/log.txt"
-  ffmpeg -i "$tmp_workspace/$TS_DIR/playlist.m3u8" -c copy "$workspace/$output_file.mp4" -xerror >> "$tmp_workspace/log.txt" 2>&1
+
+  ffmpeg -i "$tmp_workspace/$TS_DIR/playlist.m3u8" -c copy "$workspace/$output_file.mp4" >> "$tmp_workspace/log.txt" 2>&1
   if [ $? -eq 0 ]; then
     echo "视频下载成功！文件保存在 "$workspace/$output_file.mp4""
     cleanup_files
