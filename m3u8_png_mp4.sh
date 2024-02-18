@@ -51,7 +51,7 @@ exit_and_cleanup() {
 check_files() {
   ts_paths=$(grep -E '^[^#].*[^[:space:]]' "$tmp_workspace/$TS_DIR/playlist.m3u8")
   for path in $ts_paths; do
-    ffmpeg -i "$ts_paths" -f null -
+    ffmpeg -i "$ts_paths" -f null - >> "$tmp_workspace/log.txt" 2>&1
     if [ $? -ne 0 ]; then
       echo "文件 $path 不是ts文件或者文件不存在" >> "$tmp_workspace/log.txt"
       return 1
@@ -135,7 +135,8 @@ download() {
   fi
 
   # 除了failed_downloads.txt文件，再次检查每个文件，看ts文件存不存在或者是不是ts文件
-  if [ $(check_files) -ne 0 ]; then
+  check_files
+  if [ $? -ne 0 ]; then
     echo "$workspace/$output_file.mp4存在下载失败的资源，不进行视频合并" >> "$tmp_workspace/log.txt"
     echo "视频下载失败，去 "$tmp_workspace/log.txt" 查看详情"
     return
