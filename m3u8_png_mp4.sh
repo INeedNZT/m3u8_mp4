@@ -51,7 +51,7 @@ exit_and_cleanup() {
 check_files() {
   ts_paths=$(grep -E '^[^#].*[^[:space:]]' "$tmp_workspace/$TS_DIR/playlist.m3u8")
   for path in $ts_paths; do
-    ffmpeg -i "$path" -f null - >> "$tmp_workspace/log.txt" 2>&1
+    ffprobe -v error -show_format -i "$tmp_workspace/$TS_DIR/$path" >> "$tmp_workspace/log.txt" 2>&1
     if [ $? -ne 0 ]; then
       echo "文件 $path 不是ts文件或者文件不存在" >> "$tmp_workspace/log.txt"
       return 1
