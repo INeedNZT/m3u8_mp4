@@ -104,6 +104,7 @@ check_files() {
 # 主要下载逻辑
 download() {
   base_url=$(echo $m3u8_url | sed -E 's|(https?://[^/]+).*|\1|')
+  dir_url=$(echo $m3u8_url | sed -E 's|/[^/]*$||')
 
   # 下载M3U8文件
   mkdir -p "$tmp_workspace/$DOWNLOAD_DIR"
@@ -118,7 +119,12 @@ download() {
 
   for url in $png_urls; do
     if [[ ! "$url" =~ ^http ]]; then
-      url="${base_url}${url}"
+      # 不是/开头的，就是相对路径，需要加上dir_url
+      if [[ ! "$url" =~ ^/ ]]; then
+        url="$dir_url/$url"
+      else
+        url="${base_url}${url}"
+      fi
     fi
     
     filename=$(basename "$url")
