@@ -38,3 +38,9 @@ In individual downloads, you can add spaces to the workspace path by adding an e
 When a `failed_downloads.txt` file appears in the workspace directory, it indicates that there are resources in the m3u8 download list that cannot be downloaded. Generally, this occurs when the resources are denied or there is poor network connectivity, as each download task will attempt to retry 5 times. Detailed logs can be found in `log.txt` for troubleshooting. You may switch networks, then reacquire a new m3u8 link and retry the failed download task.
 
 当存储空间中出现`failed_downloads.txt`文件时，这意味着m3u8下载列表中存在着无法下载的资源。一般情况下出现这种情况是资源被拒或者网络情况不好，因为每个下载任务会重试5次。可以在`log.txt`看到详细日志来排查。你可以尝试换个网络，重新获取新的m3u8链接，然后再重试那个失败的下载任务。
+
+### Another Tip
+
+If you frequently encounter request failures and have ruled out issues on the server side, you might consider lowering the MAX_JOB_COUNT in your script. A range between 5 to 10 is a relatively conservative interval for this setting.
+
+如果经常发生请求失败，排除服务器端的问题后，可以尝试把脚本中的`MAX_JOB_COUNT`调低，5到10之间是一个相对保守的区间。

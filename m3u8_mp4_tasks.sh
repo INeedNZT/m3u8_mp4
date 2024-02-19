@@ -7,7 +7,7 @@
 
 DOWNLOAD_DIR="downloads"
 TS_DIR="ts"
-MAX_JOB_COUNT=25
+MAX_JOB_COUNT=15
 MAX_ATTEMPTS=5
 
 # 检查是否安装了 yq （用于解析JSON）
