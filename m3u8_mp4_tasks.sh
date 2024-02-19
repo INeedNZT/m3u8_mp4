@@ -2,6 +2,8 @@
 
 # 这是 m3u8_png_mp4.sh 的批量下载版，可以处理多个下载任务，使用YAML文件配置下载任务
 # 用法: m3u8_png_mp4_tasks.sh [-t task_file]
+# 说明：ffmpeg -http_seekable 0 -i "$m3u8_url" -c:v copy -strict experimental "$output_path"
+# 上面这个命令在有些网站可能会有问题，下载的视频可能会不全，所以放弃了这个命令，改用curl下载ts文件，然后用ffmpeg合并ts文件
 
 DOWNLOAD_DIR="downloads"
 TS_DIR="ts"
@@ -111,16 +113,24 @@ download() {
       while [ $attempts -lt $MAX_ATTEMPTS ]; do
         # 加上-S参数来显示错误信息
         if curl -L "$url" -s -o "$png_file" && [ -s "$png_file" ]; then
-            echo "下载 $url 成功" >> "$tmp_workspace/log.txt"
+          echo "下载 $url 成功" >> "$tmp_workspace/log.txt"
+          # 判断是否是png文件或是其他类型的文件，如果是，转换成ts文件
+          ffprobe -v error -show_format -i "$png_file" 2>&1 | grep -q "format_name=mpegts"
+          if [ $? -ne 0 ]; then
             echo "正在转换 $filename 到ts文件..." >> "$tmp_workspace/log.txt"
-            dd if="$png_file" of="$ts_file" bs=4 skip=53 > /dev/null 2>&1
-            # 验证是否是ts文件，有时候可能是被封了，返回的是html文件或是其他格式的文件
+            dd if="$png_file" of="$ts_file" bs=1 skip=220 > /dev/null 2>&1
+            # 去除完开头的212个字节再验证是否是ts文件。有时候被封了，可能返回的是html文件或是其他格式的文件
             ffprobe -v error -show_format -i "$ts_file" 2>&1 | grep -q "format_name=mpegts"
             if [ $? -eq 0 ]; then
               echo "转换文件 $filename 成功" >> "$tmp_workspace/log.txt"
               break
             fi
             echo "转换ts文件失败，可能不是ts文件，详情去ts目录下查看 $ts_file 是否存在以及它的内容" >> "$tmp_workspace/log.txt"
+          else
+            echo "$filename 是ts文件，直接复制到ts目录" >> "$tmp_workspace/log.txt"
+            cp "$png_file" "$ts_file"
+            break
+          fi
         fi
         echo "第 $((attempts+1)) 次尝试下载或转换失败，5秒后重试" >> "$tmp_workspace/log.txt"
         sleep 5
