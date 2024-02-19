@@ -131,9 +131,9 @@ download() {
             matches=$(xxd -p -c 1 "$png_file" | grep -m 50 -n "47" | cut -d: -f1)
             start_offset=$(find_start "$matches")
             if [ -z "$start_offset" ]; then
-              echo "找不到ts文件 $png_file 的起始偏移量，文件可能被加密" >> "$tmp_workspace/log.txt"
+              echo "未能找到元文件 $png_file 的起始偏移量，文件可能被加密或不是ts文件" >> "$tmp_workspace/log.txt"
             else
-              echo "找到ts文件 $png_file 的起始偏移量: $start_offset" >> "$tmp_workspace/log.txt"
+              echo "找到元文件 $png_file 的起始偏移量: $start_offset" >> "$tmp_workspace/log.txt"
               dd if="$png_file" of="$ts_file" bs=1 skip="$start_offset" > /dev/null 2>&1
               # 去除完开头的212个字节再验证是否是ts文件。有时候被封了，可能返回的是html文件或是其他格式的文件
               ffprobe -v error -show_format -i "$ts_file" 2>&1 | grep -q "format_name=mpegts"
@@ -142,7 +142,7 @@ download() {
                 break
               fi
             fi
-            echo "转换ts文件失败，可能不是ts文件，详情去ts目录下查看 $ts_file 是否存在以及它的内容" >> "$tmp_workspace/log.txt"
+            echo "转换ts文件失败，详情去ts目录下查看 $ts_file 是否存在以及它的内容" >> "$tmp_workspace/log.txt"
           else
             echo "$filename 是ts文件，直接复制到ts目录" >> "$tmp_workspace/log.txt"
             cp "$png_file" "$ts_file"
@@ -154,7 +154,7 @@ download() {
         attempts=$((attempts+1))
       done
       if [ $attempts -eq $MAX_ATTEMPTS ]; then
-          echo "下载资源 $workspace/$output_file.mp4 失败，资源链接:$url" >> "$workspace/failed_downloads.txt"
+          echo "下载 $workspace/$output_file.mp4 中的资源 $filename 失败，链接:$url" >> "$workspace/failed_downloads.txt"
       fi
     )&
   done
