@@ -165,8 +165,9 @@ download() {
   # 先把原始的m3u8文件复制一份到ts目录下
   cp "$tmp_workspace/$DOWNLOAD_DIR/playlist.m3u8" "$tmp_workspace/$TS_DIR/playlist.m3u8"
   # 替换URL为本地文件名
+  file_index=0
   for url in $png_urls; do
-    filename=$(basename "$url").ts
+    filename="segment_$((file_index++)).ts"
     awk -v old="$url" -v new="$filename" '{gsub(old, new); print}' "$tmp_workspace/$TS_DIR/playlist.m3u8" > tmp.m3u8 && mv tmp.m3u8 "$tmp_workspace/$TS_DIR/playlist.m3u8"
   done
 
