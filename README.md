@@ -41,6 +41,6 @@ When a `failed_downloads.txt` file appears in the workspace directory, it indica
 
 ### Another Tip
 
-If you frequently encounter request failures and have ruled out issues on the server side, you might consider lowering the MAX_JOB_COUNT in your script. A range between 5 to 10 is a relatively conservative interval for this setting.
+If you frequently encounter request failures and have ruled out issues on the server side, you might consider lowering the `MAX_JOB_COUNT` in your script. A range between 5 to 10 is a relatively conservative interval for this setting.
 
-如果经常发生请求失败，排除服务器端的问题后，可以尝试把脚本中的`MAX_JOB_COUNT`调低，5到10之间是一个相对保守的区间。
+如果经常发生请求失败，排除服务器端的问题后，可以尝试把脚本中的 `MAX_JOB_COUNT` 调低，5到10之间是一个相对保守的区间。
