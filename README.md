@@ -38,8 +38,8 @@ chmod +x m3u8_png_mp4_tasks.sh
 ./m3u8_png_mp4_tasks.sh
 ```
 
-### Space Issues
+## Space Issues
 
 In individual downloads, you can add spaces to the workspace path by adding an escape character '\\', but escaping is not necessary within tasks.yml. It's important to note that spaces are not supported in output filenames.
 
-在单个下载中，你可以通过添加转义符 '\\' 来给存储空间添加空格，但转义在tasks.yml中是不需要的。需要注意的是输出文件名不支持空格
+在单个下载中，你可以通过添加转义符 '\\' 来给存储空间路径添加空格，但转义在tasks.yml中是不需要的。需要注意的是输出文件名不支持空格
