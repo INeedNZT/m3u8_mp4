@@ -242,7 +242,7 @@ init_tasks() {
     workspace_map+=("$path")
     # 存储映射名
     map_names+=("task_map_$i")
-    tasks_str=$(yq '.tasks["'$i'"].workspace | del(.path)' $task_file)
+    tasks_str=$(yq '... comments="" | .tasks["'$i'"].workspace | del(.path)' $task_file)
     keys=$(echo "$tasks_str" | cut -d':' -f1)
     values=$(echo "$tasks_str" | cut -d':' -f2-)
     # 用制表符来区分键值对
