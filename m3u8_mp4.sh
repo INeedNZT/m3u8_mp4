@@ -6,7 +6,7 @@
 
 DOWNLOAD_DIR="downloads"
 TS_DIR="ts"
-MAX_JOB_COUNT=35
+MAX_JOB_COUNT=25
 MAX_ATTEMPTS=5
 
 # 初始化存储空间
@@ -46,6 +46,28 @@ exit_and_cleanup() {
     cleanup_files
     echo "正在退出脚本..."
     exit
+}
+
+find_start () {
+  offsets="$1"
+
+  # 检查每个偏移量
+  for offset in $offsets; do
+    prev_offset=$offset
+    for next_offset in $offsets; do
+      if [ $next_offset -gt $prev_offset ]; then
+        # 计算两个偏移量之间的差
+        diff=$((next_offset - prev_offset))
+        # 检查这个差是否是188的倍数
+        if [ $((diff % 188)) -ne 0 ]; then
+          break
+        fi
+        # 返回找到的ts文件的起始偏移量
+        echo $((offset - 1))
+        return
+      fi
+    done
+  done
 }
 
 # 检查文件是否是ts文件或是否存在
@@ -95,11 +117,14 @@ download() {
       while [ $attempts -lt $MAX_ATTEMPTS ]; do
         if curl -L "$url" -o "$png_file" && [ -s "$png_file" ]; then
           echo "下载 $url 成功" >> "$tmp_workspace/log.txt"
-          # 判断是否是png文件或是其他类型的文件，如果是，转换成ts文件
-          ffprobe -v error -show_format -i "$png_file" 2>&1 | grep -q "format_name=mpegts"
-          if [ $? -ne 0 ]; then
+          # 用xxd判断文件开头16进制是否是标准的ts文件（47字节开头）
+          if [ "$(xxd -l 1 -p "$png_file")" != "47" ]; then
             echo "正在转换 $filename 到ts文件..." >> "$tmp_workspace/log.txt"
-            dd if="$png_file" of="$ts_file" bs=1 skip=220 > /dev/null 2>&1
+            # 找到ts的开头，第一个合法的47字节
+            matches=$(xxd -p -c 1 "$png_file" | grep -m 50 -n "47" | cut -d: -f1)
+            start_offset=$(find_start "$matches")
+            echo "找到ts文件 $png_file 的起始偏移量: $start_offset" >> "$tmp_workspace/log.txt"
+            dd if="$png_file" of="$ts_file" bs=1 skip="$start_offset" > /dev/null 2>&1
             # 去除完开头的212个字节再验证是否是ts文件。有时候被封了，可能返回的是html文件或是其他格式的文件
             ffprobe -v error -show_format -i "$ts_file" 2>&1 | grep -q "format_name=mpegts"
             if [ $? -eq 0 ]; then
