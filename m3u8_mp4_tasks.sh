@@ -148,13 +148,17 @@ download() {
             # 找到ts的开头，第一个合法的47字节
             matches=$(xxd -p -c 1 "$png_file" | grep -m 50 -n "47" | cut -d: -f1)
             start_offset=$(find_start "$matches")
-            echo "找到ts文件 $png_file 的起始偏移量: $start_offset" >> "$tmp_workspace/log.txt"
-            dd if="$png_file" of="$ts_file" bs=1 skip="$start_offset" > /dev/null 2>&1
-            # 去除完开头的212个字节再验证是否是ts文件。有时候被封了，可能返回的是html文件或是其他格式的文件
-            ffprobe -v error -show_format -i "$ts_file" 2>&1 | grep -q "format_name=mpegts"
-            if [ $? -eq 0 ]; then
-              echo "转换文件 $filename 成功" >> "$tmp_workspace/log.txt"
-              break
+            if [ -z "$start_offset" ]; then
+              echo "找不到ts文件 $png_file 的起始偏移量，文件可能被加密" >> "$tmp_workspace/log.txt"
+            else
+              echo "找到ts文件 $png_file 的起始偏移量: $start_offset" >> "$tmp_workspace/log.txt"
+              dd if="$png_file" of="$ts_file" bs=1 skip="$start_offset" > /dev/null 2>&1
+              # 去除完开头的212个字节再验证是否是ts文件。有时候被封了，可能返回的是html文件或是其他格式的文件
+              ffprobe -v error -show_format -i "$ts_file" 2>&1 | grep -q "format_name=mpegts"
+              if [ $? -eq 0 ]; then
+                echo "转换文件 $filename 成功" >> "$tmp_workspace/log.txt"
+                break
+              fi
             fi
             echo "转换ts文件失败，可能不是ts文件，详情去ts目录下查看 $ts_file 是否存在以及它的内容" >> "$tmp_workspace/log.txt"
           else
