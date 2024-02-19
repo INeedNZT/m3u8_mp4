@@ -117,6 +117,7 @@ download() {
 
   echo "发现: $(echo "$png_urls" | wc -l) 个资源文件需要下载" >> "$tmp_workspace/log.txt"
 
+  file_index=0
   for url in $png_urls; do
     if [[ ! "$url" =~ ^http ]]; then
       # 不是/开头的，就是相对路径，需要加上dir_url
@@ -127,7 +128,7 @@ download() {
       fi
     fi
     
-    filename=$(basename "$url")
+    filename="segment_$((file_index++))"
     png_file="$tmp_workspace/$DOWNLOAD_DIR/$filename"
     ts_file="$tmp_workspace/$TS_DIR/${filename}.ts"
 
