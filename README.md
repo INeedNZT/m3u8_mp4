@@ -1,7 +1,7 @@
 # m3u8_mp4
-A simple shell script - download m3u8 and convert to mp4 file
+A simple shell script - download m3u8 (Unencrypted) and convert to mp4 file
 
-下载m3u8并且转换成mp4文件的简单脚本
+下载m3u8（未加密）并且转换成mp4文件的简单脚本
 
 ## Get Started
 
