@@ -76,13 +76,12 @@ find_start () {
       if [ $next_offset -gt $prev_offset ]; then
         # 计算两个偏移量之间的差
         diff=$((next_offset - prev_offset))
-        # 检查这个差是否是188的倍数
-        if [ $((diff % 188)) -ne 0 ]; then
-          break
+        # 现在检查这个差是否正好等于188
+        if [ $diff -eq 188 ]; then
+          # 返回找到的ts文件的起始偏移量
+          echo $((prev_offset))
+          return
         fi
-        # 返回找到的ts文件的起始偏移量
-        echo $((offset - 1))
-        return
       fi
     done
   done
@@ -154,7 +153,7 @@ download() {
             else
               echo "找到元文件 $png_file 的起始偏移量: $start_offset" >> "$tmp_workspace/log.txt"
               dd if="$png_file" of="$ts_file" bs=1 skip="$start_offset" > /dev/null 2>&1
-              # 去除完开头的212个字节再验证是否是ts文件。有时候被封了，可能返回的是html文件或是其他格式的文件
+              # 去除完开头多余的字节再验证是否是ts文件。有时候被封了，可能返回的是html文件或是其他格式的文件
               ffprobe -v error -show_format -i "$ts_file" 2>&1 | grep -q "format_name=mpegts"
               if [ $? -eq 0 ]; then
                 echo "转换文件 $filename 成功" >> "$tmp_workspace/log.txt"
